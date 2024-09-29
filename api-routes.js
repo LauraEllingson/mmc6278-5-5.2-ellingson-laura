@@ -17,8 +17,7 @@ router
     );
     res.json(inventoryItems);
   })
-
-  // POST route that inserts inventory items
+// POST route that inserts inventory items
 .post(async (req, res) => {
   const { inventoryItems } = req.body;
 
@@ -73,6 +72,7 @@ router
 
   res.status(204).end(); // Return 204 status code if deleted
 });
+
 
 router
   .route('/cart')
