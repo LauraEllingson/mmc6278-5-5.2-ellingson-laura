@@ -17,19 +17,20 @@ router
     );
     res.json(inventoryItems);
   })
-// POST route that inserts inventory items
-.post(async (req, res) => {
-  const { inventoryItems } = req.body;
-
-  // Insert inventory item into the database
-  await db.query(
-    `INSERT INTO inventory (name, image, description, price, quantity) 
-     VALUES (?, ?, ?, ?, ?)`,
-    [inventoryItems.name, inventoryItems.image, inventoryItems.description, inventoryItems.price, inventoryItems.quantity]
-  );
+ 
+  .post(async (req, res) => {
+    const { name, image, description, price, quantity } = req.body;
   
-  res.status(204).end();
-});
+    // Insert inventory item into the database
+    await db.query(
+      `INSERT INTO inventory (name, image, description, price, quantity) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [name, image, description, price, quantity]
+    );
+  
+    // Return a 204 status if the insert is successful
+    res.status(204).end();
+  });
 
 router
 .route('/inventory/:id')
@@ -42,6 +43,9 @@ router
     `SELECT * FROM inventory WHERE id = ?`,
     [id]
   );
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
 
   res.json(item);
 })
@@ -51,13 +55,15 @@ router
   const { id } = req.params;
   const { name, image, description, price, quantity } = req.body;
   
-  await db.query(
+ const [result] = await db.query(
     `UPDATE inventory 
      SET name = ?, image = ?, description = ?, price = ?, quantity = ? 
      WHERE id = ?`,
     [name, image, description, price, quantity, id]
   );
-  
+  if (result.affectedRows === 0) {
+    return res.status(404).json({ message: 'Item not found' });
+  }
   res.status(204).end(); // Return 204 status code if modified
 })
 
@@ -65,11 +71,14 @@ router
 .delete(async (req, res) => {
   const { id } = req.params;
 
-  await db.query(
+  const [result] = await db.query(
     `DELETE FROM inventory WHERE id = ?`,
     [id]
   );
 
+if (result.affectedRows === 0) {
+    return res.status(404).json({ message: 'Item not found' });
+  }
   res.status(204).end(); // Return 204 status code if deleted
 });
 
@@ -94,6 +103,7 @@ router
     )
     res.json({cartItems, total: total || 0})
   })
+ 
   .post(async (req, res) => {
     const {inventoryId, quantity} = req.body
     // Using a LEFT JOIN ensures that we always return an existing
@@ -127,6 +137,7 @@ router
     }
     res.status(204).end()
   })
+  
   .delete(async (req, res) => {
     // Deletes the entire cart table
     await db.query('DELETE FROM cart')
